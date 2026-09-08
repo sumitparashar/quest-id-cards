@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quest ID cards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#1e3a8c;
+  --navy-deep:#16296b;
+  --sky:#3faee4;
+  --paper:#eef1f6;
+  --surface:#ffffff;
+  --ink:#101828;
+  --muted:#5b6577;
+  --line:#d5dbe6;
+  --card-w:712px;
+  --card-h:1013px;
+  --zoom:.52;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:"Inter","Segoe UI",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- app chrome ---------- */
+.topbar{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:14px 24px;background:var(--surface);
+  border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:20;
+}
+.mark{display:flex;align-items:baseline;gap:9px;margin-right:auto}
+.mark strong{font-size:16px;font-weight:650;letter-spacing:-.01em}
+.mark span{font-size:13px;color:var(--muted)}
+button{font:inherit;cursor:pointer;border-radius:7px;border:1px solid transparent;padding:9px 15px}
+.btn-primary{background:var(--navy);color:#fff;font-weight:550}
+.btn-primary:hover{background:var(--navy-deep)}
+.btn-quiet{background:var(--surface);border-color:var(--line);color:var(--ink);font-weight:500}
+.btn-quiet:hover{border-color:#aab4c6}
+button:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
+
+.layout{display:grid;grid-template-columns:400px minmax(0,1fr);gap:0;align-items:start}
+.panel{padding:24px;border-right:1px solid var(--line);background:var(--surface);min-height:calc(100vh - 59px)}
+.stage{padding:32px 24px 64px;display:flex;flex-direction:column;align-items:center;gap:18px}
+
+fieldset{border:0;margin:0 0 26px;padding:0}
+legend{font-size:12.5px;font-weight:650;color:var(--navy);letter-spacing:.02em;padding:0 0 10px}
+legend + .hint{margin-top:-4px}
+.hint{font-size:12.5px;color:var(--muted);margin:0 0 12px}
+label{display:block;font-size:13px;font-weight:550;margin:0 0 5px}
+.field{margin-bottom:14px}
+input[type=text],input[type=tel],select,textarea{
+  width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:7px;
+  font:inherit;background:#fbfcfe;color:var(--ink);
+}
+input:focus,select:focus,textarea:focus{border-color:var(--sky);background:#fff}
+textarea{resize:vertical;min-height:60px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.drop{
+  border:1.5px dashed #b9c3d4;border-radius:10px;background:#f8fafd;
+  padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;
+}
+.drop:hover,.drop.over{border-color:var(--sky);background:#f2f9fe}
+.drop input{display:none}
+.thumb{width:52px;height:52px;border-radius:50%;background:#e3e8f0;flex:none;object-fit:cover;border:1px solid var(--line)}
+.thumb.sq{border-radius:6px;background:#fff}
+.drop .txt{font-size:13px;color:var(--muted);line-height:1.35}
+.drop .txt b{display:block;color:var(--ink);font-weight:550;font-size:13.5px}
+
+.assets{border-top:1px solid var(--line);padding-top:20px}
+.zoomrow{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.zoomrow input{width:150px}
+
+/* ---------- the card ---------- */
+.scaler{transform:scale(var(--zoom));transform-origin:top center}
+.holder{width:calc(var(--card-w) * var(--zoom));height:calc(var(--card-h) * var(--zoom))}
+.card{
+  width:var(--card-w);height:var(--card-h);background:#fff;padding:14px;
+  box-shadow:0 10px 30px rgba(16,24,40,.16);
+}
+.plate{position:relative;width:100%;height:100%;border:2px solid #c7ced9;overflow:hidden;background:#fff}
+.bg{position:absolute;inset:0;width:100%;height:100%}
+.content{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;padding:40px 56px 0}
+
+.logo{height:142px;max-width:360px;object-fit:contain}
+.logo-empty{
+  height:142px;width:330px;border:2px dashed #b9c3d4;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;color:#8f9bb0;
+  font-size:19px;font-weight:600;text-align:center;padding:10px;
+}
+.company{
+  margin-top:12px;font-family:Arial,Helvetica,sans-serif;font-weight:700;
+  font-size:30px;color:var(--navy);letter-spacing:-.2px;text-align:center;line-height:1.15;
+}
+.photo{
+  margin-top:26px;width:258px;height:258px;border-radius:50%;
+  border:5px solid var(--navy);object-fit:cover;background:#e9edf3;flex:none;
+}
+.photo-empty{
+  margin-top:26px;width:258px;height:258px;border-radius:50%;
+  border:5px dashed #b9c3d4;background:#f4f7fb;display:flex;align-items:center;
+  justify-content:center;color:#93a0b5;font-size:20px;font-weight:600;flex:none;
+}
+.name{
+  margin-top:30px;font-family:"Monotype Corsiva","Lucida Calligraphy","Apple Chancery","Cormorant Garamond",Georgia,serif;
+  font-style:italic;font-weight:600;font-size:58px;line-height:1.05;color:var(--navy-deep);
+  text-align:center;max-width:520px;
+}
+.desig,.idline,.mobline,.bloodline{
+  font-family:Arial,Helvetica,sans-serif;text-align:center;color:#111d3d;
+}
+.desig{margin-top:10px;font-size:31px;font-weight:400}
+.idline{margin-top:4px;font-size:31px;font-weight:700}
+.mobline{margin-top:3px;font-size:33px;font-weight:700}
+.bloodline{margin-top:5px;font-size:27px;font-weight:700;color:#8c1b1b}
+
+.lower{position:absolute;left:0;right:0;bottom:0;padding:0 40px 22px}
+.lowrow{display:flex;align-items:flex-end;justify-content:space-between;height:126px}
+.qr{width:122px;height:122px;background:#fff}
+.qr img,.qr canvas{width:122px !important;height:122px !important;display:block}
+.qr-empty{width:122px;height:122px;border:1.5px dashed #b9c3d4;border-radius:4px}
+.signwrap{width:230px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+.sign{max-height:82px;max-width:210px;object-fit:contain}
+.sign-empty{height:66px;width:180px;border-bottom:1.5px solid #9aa5b8}
+.signlabel{font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:700;color:#8c1b1b;margin-top:2px}
+.addr{width:500px;text-align:center;font-family:Arial,Helvetica,sans-serif;color:var(--navy);margin-top:10px}
+.addr .a1{font-size:26px;font-weight:700;line-height:1.28;white-space:pre-line}
+.addr .a2{font-size:21px;font-weight:700;margin-top:3px}
+.addr .a2 .lead{font-weight:500}
+
+/* ---------- print ---------- */
+@media print{
+  @page{size:74mm 105mm;margin:0}
+  .topbar,.panel,.zoomrow{display:none !important}
+  body{background:#fff}
+  .layout{display:block}
+  .stage{padding:0;display:block}
+  .holder{width:74mm;height:105mm}
+  .scaler{transform:scale(.3928);transform-origin:top left}
+  .card{box-shadow:none;padding:0}
+}
+
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .panel{border-right:0;border-bottom:1px solid var(--line);min-height:0;order:2}
+  .stage{order:1;padding:22px 12px 30px}
+  :root{--zoom:.42}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="mark"><strong>Quest ID cards</strong><span>Employee identity card generator</span></div>
+  <button class="btn-quiet" id="btnPrint">Print card</button>
+  <button class="btn-primary" id="btnPng">Download PNG</button>
+</header>
+
+<div class="layout">
+
+  <!-- ============ FORM ============ -->
+  <section class="panel">
+    <fieldset>
+      <legend>Card holder</legend>
+
+      <label class="drop" id="dropPhoto" for="filePhoto">
+        <img class="thumb" id="thumbPhoto" alt="">
+        <span class="txt"><b>Passport photo</b>Click or drop an image. Square photos crop best.</span>
+        <input type="file" id="filePhoto" accept="image/*">
+      </label>
+
+      <div class="field" style="margin-top:14px">
+        <label for="inName">Full name</label>
+        <input type="text" id="inName" placeholder="Nitil" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label for="inDesig">Designation</label>
+        <input type="text" id="inDesig" value="Enumerator" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label for="inId">Employee ID</label>
+        <input type="text" id="inId" placeholder="QRDPL/2026/313" autocomplete="off">
+        <p class="hint" style="margin:5px 0 0">Printed as ID-QRDPL/2026/313</p>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label for="inMob">Mobile number</label>
+          <input type="tel" id="inMob" placeholder="7318022832" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="inBlood">Blood group</label>
+          <select id="inBlood">
+            <option value="">Not shown</option>
+            <option>A+</option><option>A-</option>
+            <option>B+</option><option>B-</option>
+            <option>AB+</option><option>AB-</option>
+            <option>O+</option><option>O-</option>
+          </select>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>QR code</legend>
+      <div class="field">
+        <label for="inQrMode">What it opens</label>
+        <select id="inQrMode">
+          <option value="vcard">Save contact (name, ID, mobile)</option>
+          <option value="site">Company website</option>
+          <option value="custom">Custom link or text</option>
+        </select>
+      </div>
+      <div class="field" id="qrCustomWrap" hidden>
+        <label for="inQrText">Link or text</label>
+        <textarea id="inQrText" placeholder="https://www.quest.net.in/verify/313"></textarea>
+      </div>
+    </fieldset>
+
+    <fieldset class="assets">
+      <legend>Company details</legend>
+      <p class="hint">These stay the same on every card. Put <code>logo.png</code> and <code>signature.png</code> in an <code>assets</code> folder and they load automatically.</p>
+
+      <label class="drop" id="dropLogo" for="fileLogo">
+        <img class="thumb sq" id="thumbLogo" alt="">
+        <span class="txt"><b>Logo</b>PNG with a transparent background works best.</span>
+        <input type="file" id="fileLogo" accept="image/*">
+      </label>
+
+      <label class="drop" id="dropSign" for="fileSign" style="margin-top:12px">
+        <img class="thumb sq" id="thumbSign" alt="">
+        <span class="txt"><b>Signature</b>Scanned signature of the authorised signatory.</span>
+        <input type="file" id="fileSign" accept="image/*">
+      </label>
+
+      <div class="field" style="margin-top:16px">
+        <label for="inCompany">Company name</label>
+        <input type="text" id="inCompany" value="Quest Research &amp; Development Pvt. Ltd.">
+      </div>
+      <div class="field">
+        <label for="inAddr">Address</label>
+        <textarea id="inAddr">B-163, B Block, Freedom Fighter
+Enclave Saket, New Delhi-110068</textarea>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="inOffMob">Office number</label>
+          <input type="text" id="inOffMob" value="9554240030">
+        </div>
+        <div class="field">
+          <label for="inSite">Website</label>
+          <input type="text" id="inSite" value="www.quest.net.in">
+        </div>
+      </div>
+    </fieldset>
+  </section>
+
+  <!-- ============ PREVIEW ============ -->
+  <section class="stage">
+    <div class="holder" id="holder">
+      <div class="scaler" id="scaler">
+        <div class="card" id="card">
+          <div class="plate">
+            <svg class="bg" viewBox="0 0 712 1013" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="712" height="1013" fill="#ffffff"/>
+              <path d="M0 0 H268 C214 140 124 278 64 432 C34 510 12 592 4 668 H0 Z" fill="#1e3a8c"/>
+              <path d="M314 0 C246 156 148 306 94 478 C66 568 50 650 48 736" stroke="#3faee4" stroke-width="30" fill="none" stroke-linecap="round"/>
+              <path d="M712 632 C700 738 660 840 600 918 C570 956 534 990 504 1013 L712 1013 Z" fill="#1e3a8c"/>
+              <path d="M712 694 C700 796 652 898 568 966 C534 993 496 1013 470 1013" stroke="#3faee4" stroke-width="28" fill="none" stroke-linecap="round"/>
+              <path d="M712 852 C692 908 652 956 598 996" stroke="#9ad8f2" stroke-width="14" fill="none" stroke-linecap="round"/>
+            </svg>
+
+            <div class="content">
+              <img class="logo" id="cLogo" alt="" hidden>
+              <div class="logo-empty" id="cLogoEmpty">Add your logo</div>
+              <div class="company" id="cCompany">Quest Research &amp; Development Pvt. Ltd.</div>
+              <img class="photo" id="cPhoto" alt="" hidden>
+              <div class="photo-empty" id="cPhotoEmpty">Photo</div>
+              <div class="name" id="cName">Name</div>
+              <div class="desig" id="cDesig">Enumerator</div>
+              <div class="idline" id="cId">ID-QRDPL/2026/000</div>
+              <div class="mobline" id="cMob">Mob.: 0000000000</div>
+              <div class="bloodline" id="cBlood" hidden></div>
+            </div>
+
+            <div class="lower">
+              <div class="lowrow">
+                <div class="qr" id="cQr"></div>
+                <div class="signwrap">
+                  <img class="sign" id="cSign" alt="" hidden>
+                  <div class="sign-empty" id="cSignEmpty"></div>
+                  <div class="signlabel">Authorised Signatory</div>
+                </div>
+              </div>
+              <div class="addr">
+                <div class="a1" id="cAddr">B-163, B Block, Freedom Fighter
+Enclave Saket, New Delhi-110068</div>
+                <div class="a2"><span class="lead">Mob.: </span><span id="cOffMob">9554240030</span> | <span class="lead">Visit us: </span><span id="cSite">www.quest.net.in</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="zoomrow">
+      <label for="zoom" style="margin:0;font-weight:500">Preview size</label>
+      <input type="range" id="zoom" min="30" max="90" value="52">
+    </div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const state = { photo:null, logo:null, sign:null };
+
+/* ---------- image inputs ---------- */
+function wireImage(dropId, inputId, thumbId, key){
+  const drop = $(dropId), input = $(inputId), thumb = $(thumbId);
+  const load = file => {
+    if(!file || !file.type.startsWith('image/')) return;
+    const r = new FileReader();
+    r.onload = e => { state[key] = e.target.result; thumb.src = e.target.result; render(); };
+    r.readAsDataURL(file);
+  };
+  input.addEventListener('change', e => load(e.target.files[0]));
+  ['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => {
+    e.preventDefault(); drop.classList.add('over');
+  }));
+  ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => {
+    e.preventDefault(); drop.classList.remove('over');
+  }));
+  drop.addEventListener('drop', e => load(e.dataTransfer.files[0]));
+}
+wireImage('dropPhoto','filePhoto','thumbPhoto','photo');
+wireImage('dropLogo','fileLogo','thumbLogo','logo');
+wireImage('dropSign','fileSign','thumbSign','sign');
+
+/* Try assets/ so the logo and signature don't need re-uploading */
+function tryAsset(path, key, thumbId){
+  const probe = new Image();
+  probe.onload = () => {
+    const c = document.createElement('canvas');
+    c.width = probe.naturalWidth; c.height = probe.naturalHeight;
+    c.getContext('2d').drawImage(probe,0,0);
+    try{
+      state[key] = c.toDataURL('image/png');
+      $(thumbId).src = state[key];
+      render();
+    }catch(err){ /* tainted canvas, ignore */ }
+  };
+  probe.src = path;
+}
+tryAsset('assets/logo.png','logo','thumbLogo');
+tryAsset('assets/signature.png','sign','thumbSign');
+
+/* ---------- QR ---------- */
+let qrBox = null;
+function qrPayload(){
+  const mode = $('inQrMode').value;
+  if(mode === 'site') return 'https://' + ($('inSite').value.trim().replace(/^https?:\/\//,'') || 'www.quest.net.in');
+  if(mode === 'custom') return $('inQrText').value.trim();
+  const name = $('inName').value.trim() || 'Employee';
+  return [
+    'BEGIN:VCARD','VERSION:3.0',
+    'FN:' + name,
+    'N:' + name + ';;;;',
+    'ORG:' + $('inCompany').value.trim(),
+    'TITLE:' + $('inDesig').value.trim(),
+    'TEL;TYPE=CELL:' + $('inMob').value.trim(),
+    'NOTE:ID-' + $('inId').value.trim(),
+    'URL:https://' + $('inSite').value.trim().replace(/^https?:\/\//,''),
+    'END:VCARD'
+  ].join('\n');
+}
+function drawQr(){
+  const host = $('cQr');
+  const text = qrPayload();
+  host.innerHTML = '';
+  if(!text || typeof QRCode === 'undefined'){
+    host.innerHTML = '<div class="qr-empty"></div>';
+    return;
+  }
+  qrBox = new QRCode(host, {
+    text, width:488, height:488,
+    colorDark:'#000000', colorLight:'#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+
+/* ---------- render ---------- */
+function fitName(el){
+  el.style.fontSize = '58px';
+  let size = 58;
+  while(el.scrollWidth > 520 && size > 30){ size -= 2; el.style.fontSize = size + 'px'; }
+}
+function render(){
+  const has = (el, empty, src) => {
+    if(src){ el.src = src; el.hidden = false; empty.hidden = true; }
+    else { el.hidden = true; empty.hidden = false; }
+  };
+  has($('cLogo'), $('cLogoEmpty'), state.logo);
+  has($('cPhoto'), $('cPhotoEmpty'), state.photo);
+  has($('cSign'), $('cSignEmpty'), state.sign);
+
+  $('cCompany').textContent = $('inCompany').value.trim();
+  $('cName').textContent = $('inName').value.trim() || 'Name';
+  fitName($('cName'));
+  $('cDesig').textContent = $('inDesig').value.trim();
+
+  const id = $('inId').value.trim();
+  $('cId').textContent = id ? 'ID-' + id : '';
+  $('cId').hidden = !id;
+
+  const mob = $('inMob').value.trim();
+  $('cMob').textContent = mob ? 'Mob.: ' + mob : '';
+  $('cMob').hidden = !mob;
+
+  const blood = $('inBlood').value;
+  $('cBlood').textContent = blood ? 'Blood Group: ' + blood : '';
+  $('cBlood').hidden = !blood;
+
+  $('cAddr').textContent = $('inAddr').value;
+  $('cOffMob').textContent = $('inOffMob').value.trim();
+  $('cSite').textContent = $('inSite').value.trim();
+
+  $('qrCustomWrap').hidden = $('inQrMode').value !== 'custom';
+  drawQr();
+}
+['inName','inDesig','inId','inMob','inBlood','inCompany','inAddr','inOffMob','inSite','inQrMode','inQrText']
+  .forEach(id => $(id).addEventListener('input', render));
+$('inQrMode').addEventListener('change', render);
+$('inBlood').addEventListener('change', render);
+
+$('zoom').addEventListener('input', e => {
+  document.documentElement.style.setProperty('--zoom', e.target.value/100);
+});
+
+/* ---------- export ---------- */
+function fileStem(){
+  const n = ($('inName').value.trim() || 'id-card').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'-');
+  const i = $('inId').value.trim().replace(/[^\w]/g,'-');
+  return (n + (i ? '-' + i : '')).toLowerCase();
+}
+$('btnPng').addEventListener('click', async () => {
+  const btn = $('btnPng'), scaler = $('scaler'), holder = $('holder');
+  btn.disabled = true; btn.textContent = 'Rendering…';
+  const savedT = scaler.style.transform, savedW = holder.style.width, savedH = holder.style.height;
+  scaler.style.transform = 'none';
+  holder.style.width = '712px'; holder.style.height = '1013px';
+  try{
+    const canvas = await html2canvas($('card'), { scale:3, backgroundColor:'#ffffff', useCORS:true, logging:false });
+    const a = document.createElement('a');
+    a.download = fileStem() + '.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+    btn.textContent = 'Downloaded';
+    setTimeout(() => btn.textContent = 'Download PNG', 1600);
+  }catch(err){
+    console.error(err);
+    btn.textContent = 'Render failed — use Print';
+    setTimeout(() => btn.textContent = 'Download PNG', 2600);
+  }finally{
+    scaler.style.transform = savedT; holder.style.width = savedW; holder.style.height = savedH;
+    btn.disabled = false;
+  }
+});
+$('btnPrint').addEventListener('click', () => window.print());
+
+render();
+</script>
+</body>
+</html>
