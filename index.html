@@ -120,13 +120,14 @@ textarea{resize:vertical;min-height:60px}
   font-style:italic;font-weight:600;font-size:58px;line-height:1.05;color:var(--navy-deep);
   text-align:center;white-space:nowrap;
 }
-.desig,.idline,.mobline,.bloodline{
+.desig,.idline,.mobline,.bloodline,.dobline{
   font-family:Arial,Helvetica,sans-serif;text-align:center;color:#111d3d;
 }
 .desig{margin-top:10px;font-size:31px;font-weight:400}
 .idline{margin-top:4px;font-size:31px;font-weight:700}
 .mobline{margin-top:3px;font-size:33px;font-weight:700}
 .bloodline{margin-top:5px;font-size:27px;font-weight:700;color:#8c1b1b}
+.dobline{margin-top:3px;font-size:27px;font-weight:700}
 
 .lower{position:absolute;left:0;right:0;bottom:0;padding:0 26px 22px 40px}
 .lowrow{display:flex;align-items:flex-end;justify-content:space-between;height:126px}
@@ -215,6 +216,11 @@ textarea{resize:vertical;min-height:60px}
           </select>
         </div>
       </div>
+      <div class="field">
+        <label for="inDob">Date of birth</label>
+        <input type="text" id="inDob" placeholder="DD/MM/YYYY" inputmode="numeric" maxlength="10" autocomplete="off">
+        <p class="hint" style="margin:5px 0 0">Optional. Slashes are added as you type.</p>
+      </div>
     </fieldset>
 
     <fieldset>
@@ -297,6 +303,7 @@ Enclave Saket, New Delhi-110068</textarea>
               <div class="idline" id="cId">ID-QRDPL/2026/000</div>
               <div class="mobline" id="cMob">Mob.: 0000000000</div>
               <div class="bloodline" id="cBlood" hidden></div>
+              <div class="dobline" id="cDob" hidden></div>
             </div>
 
             <div class="lower">
@@ -379,7 +386,11 @@ function qrPayload(){
   if(mode === 'site') return 'https://' + ($('inSite').value.trim().replace(/^https?:\/\//,'') || 'www.quest.net.in');
   if(mode === 'custom') return $('inQrText').value.trim();
   const name = $('inName').value.trim() || 'Employee';
-  return [
+  const dob = $('inDob').value.trim();
+  const bday = /^\d{2}\/\d{2}\/\d{4}$/.test(dob)
+    ? dob.slice(6,10) + '-' + dob.slice(3,5) + '-' + dob.slice(0,2)
+    : '';
+  const lines = [
     'BEGIN:VCARD','VERSION:3.0',
     'FN:' + name,
     'N:' + name + ';;;;',
@@ -389,7 +400,9 @@ function qrPayload(){
     'NOTE:ID-' + $('inId').value.trim(),
     'URL:https://' + $('inSite').value.trim().replace(/^https?:\/\//,''),
     'END:VCARD'
-  ].join('\n');
+  ];
+  if(bday) lines.splice(lines.length - 1, 0, 'BDAY:' + bday);
+  return lines.join('\n');
 }
 function drawQr(){
   const host = $('cQr');
@@ -442,6 +455,10 @@ function render(){
   $('cBlood').textContent = blood ? 'Blood Group: ' + blood : '';
   $('cBlood').hidden = !blood;
 
+  const dob = $('inDob').value.trim();
+  $('cDob').textContent = dob ? 'DOB: ' + dob : '';
+  $('cDob').hidden = !dob;
+
   $('cAddr').textContent = $('inAddr').value;
   $('cOffMob').textContent = $('inOffMob').value.trim();
   $('cSite').textContent = $('inSite').value.trim();
@@ -449,10 +466,21 @@ function render(){
   $('qrCustomWrap').hidden = $('inQrMode').value !== 'custom';
   drawQr();
 }
-['inName','inDesig','inId','inMob','inBlood','inCompany','inAddr','inOffMob','inSite','inQrMode','inQrText']
+['inName','inDesig','inId','inMob','inBlood','inDob','inCompany','inAddr','inOffMob','inSite','inQrMode','inQrText']
   .forEach(id => $(id).addEventListener('input', render));
 $('inQrMode').addEventListener('change', render);
 $('inBlood').addEventListener('change', render);
+
+/* DD/MM/YYYY slashes, only while typing at the end of the field */
+$('inDob').addEventListener('input', e => {
+  const el = e.target;
+  if(el.selectionStart !== el.value.length) return;
+  const d = el.value.replace(/\D/g,'').slice(0,8);
+  let out = d.slice(0,2);
+  if(d.length > 2) out += '/' + d.slice(2,4);
+  if(d.length > 4) out += '/' + d.slice(4,8);
+  if(out !== el.value){ el.value = out; render(); }
+});
 
 $('zoom').addEventListener('input', e => {
   document.documentElement.style.setProperty('--zoom', e.target.value/100);
